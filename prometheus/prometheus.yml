@@ -1,0 +1,51 @@
+# =============================================================================
+# Prometheus Configuration for Exchange Monitoring
+# =============================================================================
+
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  external_labels:
+    cluster: 'boursenumeriquedafrique'
+    environment: 'production'
+
+# Alertmanager configuration (optional)
+# alerting:
+#   alertmanagers:
+#     - static_configs:
+#         - targets:
+#           - 'alertmanager:9093'
+
+# Scrape configurations
+scrape_configs:
+  # Exchange Server Metrics
+  - job_name: 'exchange-server'
+    static_configs:
+      - targets: ['exchange:9090']
+        labels:
+          service: 'exchange-api'
+          component: 'backend'
+
+  # TimescaleDB/PostgreSQL Metrics (if postgres-exporter is running)
+  - job_name: 'postgresql'
+    static_configs:
+      - targets: ['postgres-exporter:9187']
+        labels:
+          service: 'database'
+          component: 'timescaledb'
+
+  # Redis Metrics (if redis-exporter is running)
+  - job_name: 'redis'
+    static_configs:
+      - targets: ['redis-exporter:9121']
+        labels:
+          service: 'cache'
+          component: 'redis'
+
+  # Prometheus self-monitoring
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+        labels:
+          service: 'monitoring'
+          component: 'prometheus'

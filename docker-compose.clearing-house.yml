@@ -1,0 +1,83 @@
+# =============================================================================
+# Production Docker Compose - Server 2: Clearing House
+# Domain: payments.boursenumeriquedafrique.com
+# =============================================================================
+# Services: Clearing House (Payment Processing)
+#
+# This server handles MTN MoMo and Airtel Money payment callbacks
+# It connects to the database on Server 1 via private network
+#
+# Deploy with Dokploy:
+# 1. Create new project in Dokploy: "clearing-house"
+# 2. Add this compose file
+# 3. Set environment variables from .env.clearing-house
+# 4. Ensure private network connection to Server 1 database
+# 5. Deploy
+# =============================================================================
+
+version: '3.8'
+
+services:
+  # Clearing House Server (Payment Processing)
+  clearing-house:
+    image: ghcr.io/bourse-numerique-d-afrique/server-clearing-house:${VERSION:-latest}
+    container_name: clearing-house
+    restart: unless-stopped
+    ports:
+      - "8500:8500"  # Main HTTP server
+      - "5705:5705"  # MTN MoMo callback server
+      - "5706:5706"  # Airtel Money callback server
+    environment:
+      # Database configuration (connects to Server 1 via private network)
+      # NOTE: POSTGRES_HOST should be the private IP of Server 1 or domain
+      POSTGRES_HOST: ${POSTGRES_HOST}
+      POSTGRES_PORT: ${POSTGRES_PORT:-5432}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DATABASE: ${POSTGRES_DATABASE}
+
+      # Server configuration
+      GQL_SERVER_PORT: 8500
+      GQL_HOST: 0.0.0.0
+      GQL_PORT: 8500
+
+      # Authentication (must match Exchange server)
+      TOKEN_ISSUER: ${TOKEN_ISSUER}
+      JWT_SECRET: ${JWT_SECRET}
+
+      # MTN MoMo configuration
+      MTN_URL: ${MTN_URL}
+      MTN_COLLECTION_PRIMARY_KEY: ${MTN_COLLECTION_PRIMARY_KEY}
+      MTN_COLLECTION_SECONDARY_KEY: ${MTN_COLLECTION_SECONDARY_KEY}
+      MTN_DISBURSEMENT_PRIMARY_KEY: ${MTN_DISBURSEMENT_PRIMARY_KEY}
+      MTN_DISBURSEMENT_SECONDARY_KEY: ${MTN_DISBURSEMENT_SECONDARY_KEY}
+      MTN_WEBHOOK_HOST: ${MTN_WEBHOOK_HOST}
+      MTN_SERVER_CALLBACK_PORT: 5705
+
+      # Airtel Money configuration
+      AIRTEL_CLIENT_ID: ${AIRTEL_CLIENT_ID}
+      AIRTEL_CLIENT_SECRET: ${AIRTEL_CLIENT_SECRET}
+      AIRTEL_ENVIRONMENT: ${AIRTEL_ENVIRONMENT}
+      AIRTEL_CALLBACK_URL: ${AIRTEL_CALLBACK_URL}
+      AIRTEL_DISBURSEMENT_PIN: ${AIRTEL_DISBURSEMENT_PIN}
+      AIRTEL_SERVER_CALLBACK_PORT: 5706
+
+      # Monitoring
+      PROMETHEUS_PORT: 9090
+      PROMETHEUS_ENABLED: ${PROMETHEUS_ENABLED:-false}
+
+    networks:
+      - clearing-house-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8500/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+networks:
+  clearing-house-network:
+    driver: bridge
+
+# Note: No volumes needed as this service is stateless
+# All data is stored in the database on Server 1

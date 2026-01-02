@@ -1,0 +1,199 @@
+# =============================================================================
+# Staging/Test Docker Compose - Single Server (All Services)
+# Domains:
+#   - test.boursenumeriquedafrique.com (frontend)
+#   - test-api.boursenumeriquedafrique.com (exchange)
+#   - test-payments.boursenumeriquedafrique.com (clearing house)
+# =============================================================================
+# This configuration runs all services on a single server for cost-effective testing
+# that mirrors the production 3-server setup
+#
+# Deploy with Dokploy:
+# 1. Create new project in Dokploy: "exchange-staging"
+# 2. Add this compose file
+# 3. Set environment variables from .env.staging
+# 4. Enable auto-deploy from GitHub (latest tag)
+# 5. Deploy
+# =============================================================================
+
+version: '3.8'
+
+services:
+  # Exchange Server (Main API)
+  exchange:
+    image: ghcr.io/bourse-numerique-d-afrique/server:latest
+    container_name: exchange-api-staging
+    restart: unless-stopped
+    ports:
+      - "5700:5700"  # GraphQL HTTP/WebSocket
+    environment:
+      POSTGRES_HOST: timescaledb
+      POSTGRES_PORT: 5432
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DATABASE: ${POSTGRES_DATABASE}
+      GQL_SERVER_PORT: 5700
+      GQL_HOST: 0.0.0.0
+      GQL_PORT: 5700
+      TOKEN_ISSUER: ${TOKEN_ISSUER}
+      JWT_SECRET: ${JWT_SECRET}
+      ETH_CLIENT_URL: http://ganache:8545
+      ETH_PRIVATE_KEY: ${ETH_PRIVATE_KEY}
+      ETH_ADMIN_ADDRESS: ${ETH_ADMIN_ADDRESS}
+      ETH_HA_STRATEGY: Priority
+      ETH_SIGNATURE_PARALLELISM: 3
+      MTN_URL: ${MTN_URL}
+      MTN_COLLECTION_PRIMARY_KEY: ${MTN_COLLECTION_PRIMARY_KEY}
+      MTN_COLLECTION_SECONDARY_KEY: ${MTN_COLLECTION_SECONDARY_KEY}
+      MTN_DISBURSEMENT_PRIMARY_KEY: ${MTN_DISBURSEMENT_PRIMARY_KEY}
+      MTN_DISBURSEMENT_SECONDARY_KEY: ${MTN_DISBURSEMENT_SECONDARY_KEY}
+      MTN_WEBHOOK_HOST: ${MTN_WEBHOOK_HOST}
+      MTN_SERVER_CALLBACK_PORT: 5705
+      AIRTEL_CLIENT_ID: ${AIRTEL_CLIENT_ID}
+      AIRTEL_CLIENT_SECRET: ${AIRTEL_CLIENT_SECRET}
+      AIRTEL_ENVIRONMENT: ${AIRTEL_ENVIRONMENT}
+      AIRTEL_CALLBACK_URL: ${AIRTEL_CALLBACK_URL}
+      AIRTEL_DISBURSEMENT_PIN: ${AIRTEL_DISBURSEMENT_PIN}
+      AIRTEL_SERVER_CALLBACK_PORT: 5706
+      PROMETHEUS_PORT: 9090
+      PROMETHEUS_ENABLED: false
+      REDIS_URL: redis://redis:6379
+    depends_on:
+      timescaledb:
+        condition: service_healthy
+      ganache:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - staging-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5700/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Clearing House Server (Payment Processing)
+  clearing-house:
+    image: ghcr.io/bourse-numerique-d-afrique/server-clearing-house:latest
+    container_name: clearing-house-staging
+    restart: unless-stopped
+    ports:
+      - "8500:8500"  # Main server
+      - "5705:5705"  # MTN callback
+      - "5706:5706"  # Airtel callback
+    environment:
+      POSTGRES_HOST: timescaledb
+      POSTGRES_PORT: 5432
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DATABASE: ${POSTGRES_DATABASE}
+      GQL_SERVER_PORT: 8500
+      GQL_HOST: 0.0.0.0
+      GQL_PORT: 8500
+      TOKEN_ISSUER: ${TOKEN_ISSUER}
+      JWT_SECRET: ${JWT_SECRET}
+      MTN_URL: ${MTN_URL}
+      MTN_COLLECTION_PRIMARY_KEY: ${MTN_COLLECTION_PRIMARY_KEY}
+      MTN_COLLECTION_SECONDARY_KEY: ${MTN_COLLECTION_SECONDARY_KEY}
+      MTN_DISBURSEMENT_PRIMARY_KEY: ${MTN_DISBURSEMENT_PRIMARY_KEY}
+      MTN_DISBURSEMENT_SECONDARY_KEY: ${MTN_DISBURSEMENT_SECONDARY_KEY}
+      MTN_WEBHOOK_HOST: ${MTN_WEBHOOK_HOST}
+      MTN_SERVER_CALLBACK_PORT: 5705
+      AIRTEL_CLIENT_ID: ${AIRTEL_CLIENT_ID}
+      AIRTEL_CLIENT_SECRET: ${AIRTEL_CLIENT_SECRET}
+      AIRTEL_ENVIRONMENT: ${AIRTEL_ENVIRONMENT}
+      AIRTEL_CALLBACK_URL: ${AIRTEL_CALLBACK_URL}
+      AIRTEL_DISBURSEMENT_PIN: ${AIRTEL_DISBURSEMENT_PIN}
+      AIRTEL_SERVER_CALLBACK_PORT: 5706
+      PROMETHEUS_ENABLED: false
+    depends_on:
+      timescaledb:
+        condition: service_healthy
+    networks:
+      - staging-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8500/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # TimescaleDB (PostgreSQL with TimescaleDB extension)
+  timescaledb:
+    image: timescale/timescaledb-ha:pg17
+    container_name: timescaledb-staging
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DATABASE}
+      TIMESCALEDB_TELEMETRY: off
+    ports:
+      - "5432:5432"
+    volumes:
+      - timescaledb_staging_data:/var/lib/postgresql/data
+    networks:
+      - staging-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+  # Ganache (Ethereum test node - deterministic for testing)
+  ganache:
+    image: trufflesuite/ganache:latest
+    container_name: ganache-staging
+    restart: unless-stopped
+    ports:
+      - "8545:8545"
+    command: >
+      --host 0.0.0.0
+      --port 8545
+      --accounts 10
+      --deterministic
+      --gasLimit 10000000
+      --chain.chainId 1337
+    volumes:
+      - ganache_staging_data:/app/db
+    networks:
+      - staging-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8545"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 10s
+
+  # Redis (Caching, Session Management)
+  redis:
+    image: redis:7-alpine
+    container_name: redis-staging
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_staging_data:/data
+    networks:
+      - staging-network
+    command: redis-server --appendonly yes --maxmemory 128mb --maxmemory-policy allkeys-lru
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+networks:
+  staging-network:
+    driver: bridge
+
+volumes:
+  timescaledb_staging_data:
+    driver: local
+  ganache_staging_data:
+    driver: local
+  redis_staging_data:
+    driver: local

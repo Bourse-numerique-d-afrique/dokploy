@@ -1,0 +1,28 @@
+# Environment files with secrets
+.env.production
+.env.clearing-house
+.env.staging
+.env
+.env.local
+
+# Docker volumes
+*.sql
+backups/
+
+# Logs
+*.log
+logs/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Temporary files
+*.tmp
