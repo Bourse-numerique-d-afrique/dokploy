@@ -9,7 +9,8 @@ dokploy/
 ├── README.md                    # This file
 ├── QUICK-START.md              # 30-minute deployment guide
 ├── DEPLOYMENT.md               # Comprehensive deployment documentation
-└── DNS-CONFIGURATION.md        # DNS setup guide
+├── DNS-CONFIGURATION.md        # DNS setup guide
+└── WEBHOOK-CONFIGURATION.md    # Auto-deploy webhook setup
 
 ../
 ├── docker-compose.production.yml    # Server 1: Exchange Core
@@ -69,8 +70,9 @@ test-payments.boursenumeriquedafrique.com
 # 2. In Dokploy, update VERSION=v0.1.3
 # 3. Click "Redeploy"
 
-# Staging - Auto-deploy
+# Staging - Auto-deploy (requires webhook configuration)
 # Push to master → Auto-deploys :latest
+# See WEBHOOK-CONFIGURATION.md for setup
 ```
 
 ## 📋 Pre-Deployment Checklist
@@ -142,14 +144,22 @@ Developer → Push to master
     ↓
 GitHub Actions
     ↓
-Run tests
+Run tests (+ PR checks)
+    ↓
+Create release (v0.1.x)
     ↓
 Build Docker images
     ↓
 Push to ghcr.io
-    ├─→ :latest (staging auto-deploys)
+    ├─→ :latest (staging auto-deploys via webhook)
     └─→ :v0.1.2 (production manual deploy)
+    ↓
+Trigger Dokploy webhook (staging only)
+    ↓
+Staging auto-redeploys
 ```
+
+**Setup auto-deploy**: See `WEBHOOK-CONFIGURATION.md`
 
 ## 🗂️ Environment Variables Reference
 
@@ -175,6 +185,7 @@ See `.env.*.example` files for complete reference.
 | `QUICK-START.md`            | Fast 30-minute deployment                |
 | `DEPLOYMENT.md`             | Complete step-by-step guide              |
 | `DNS-CONFIGURATION.md`      | DNS setup and troubleshooting            |
+| `WEBHOOK-CONFIGURATION.md`  | Auto-deploy webhook setup (staging)      |
 | `../README.md`              | Main project documentation               |
 | `../CLAUDE.md`              | Development guide for Claude Code        |
 
