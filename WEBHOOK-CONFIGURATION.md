@@ -2,6 +2,16 @@
 
 This guide explains how to configure automatic staging deployments triggered by GitHub Actions.
 
+## Prerequisites
+
+This guide assumes Dokploy is **internet-accessible** to receive webhooks from GitHub Actions.
+
+**Running Dokploy on your local PC?** See **[LOCAL-DOKPLOY-OPTIONS.md](./LOCAL-DOKPLOY-OPTIONS.md)** first - it explains how to:
+- Use Cloudflare Tunnel (free, recommended)
+- Use ngrok for testing
+- Use polling instead of webhooks
+- Or run Dokploy on a cheap VPS ($5/mo)
+
 ## Overview
 
 When code is pushed to the `master` branch:
@@ -62,45 +72,83 @@ https://dokploy.your-server.com/api/projects/{projectId}/redeploy
 
 ### Step 2: Add Webhook URL to GitHub Secrets
 
+You'll need to configure webhook secrets for both backend and frontend repositories.
+
+#### Backend Repository (Server)
+
 1. **Go to GitHub repository**: https://github.com/Bourse-numerique-d-afrique/server
 2. **Navigate to Settings** → **Secrets and variables** → **Actions**
 3. **Click "New repository secret"**
 4. **Add secret**:
    - **Name**: `DOKPLOY_STAGING_WEBHOOK_URL`
-   - **Value**: The webhook URL from Step 1
+   - **Value**: The webhook URL for backend staging deployment
    - **Click "Add secret"**
+
+#### Frontend Repository (Client)
+
+1. **Go to GitHub repository**: https://github.com/Bourse-numerique-d-afrique/client
+2. **Navigate to Settings** → **Secrets and variables** → **Actions**
+3. **Click "New repository secret"**
+4. **Add secret**:
+   - **Name**: `DOKPLOY_STAGING_WEBHOOK_URL_FRONTEND`
+   - **Value**: The webhook URL for frontend staging deployment
+   - **Click "Add secret"**
+
+**Note**: You can use the same webhook URL for both if Dokploy is configured to handle multiple services, or use different URLs for separate deployments.
 
 ### Step 3: Test the Webhook
 
-1. **Make a test commit** to the `master` branch:
+#### Backend Testing
+
+1. **Make a test commit** to the server repository `master` branch:
    ```bash
-   git commit --allow-empty -m "test: trigger staging auto-deploy"
+   cd /path/to/server
+   git commit --allow-empty -m "test: trigger backend staging auto-deploy"
    git push origin master
    ```
 
 2. **Watch GitHub Actions**:
-   - Go to **Actions** tab in GitHub
+   - Go to https://github.com/Bourse-numerique-d-afrique/server/actions
    - Watch the workflow execution
    - Verify "Trigger Staging Auto-Deploy" job succeeds
 
-3. **Verify Dokploy Staging**:
-   - Log in to Dokploy
-   - Check deployment logs
-   - Verify services are redeploying with `:latest` images
+3. **Verify backend services**:
+   ```bash
+   # Check staging API
+   curl https://test-api.boursenumeriquedafrique.com/health
 
-### Step 4: Verify Auto-Deploy Works
+   # Check clearing house
+   curl https://test-payments.boursenumeriquedafrique.com/health
+   ```
 
-```bash
-# Check staging API
-curl https://test-api.boursenumeriquedafrique.com/health
+#### Frontend Testing
 
-# Check clearing house
-curl https://test-payments.boursenumeriquedafrique.com/health
-```
+1. **Make a test commit** to the client repository `master` branch:
+   ```bash
+   cd /path/to/client
+   git commit --allow-empty -m "test: trigger frontend staging auto-deploy"
+   git push origin master
+   ```
+
+2. **Watch GitHub Actions**:
+   - Go to https://github.com/Bourse-numerique-d-afrique/client/actions
+   - Watch the workflow execution
+   - Verify "Trigger Staging Auto-Deploy" job succeeds
+
+3. **Verify frontend deployment**:
+   ```bash
+   # Check staging frontend
+   curl https://test.boursenumeriquedafrique.com
+
+   # Or open in browser
+   open https://test.boursenumeriquedafrique.com
+   ```
 
 ## Webhook Payload
 
-The GitHub Actions workflow sends this JSON payload:
+### Backend Webhook Payload
+
+The GitHub Actions workflow sends this JSON payload for backend deployments:
 
 ```json
 {
@@ -117,6 +165,23 @@ The GitHub Actions workflow sends this JSON payload:
 }
 ```
 
+### Frontend Webhook Payload
+
+The GitHub Actions workflow sends this JSON payload for frontend deployments:
+
+```json
+{
+  "event": "docker_image_published",
+  "repository": "Bourse-numerique-d-afrique/client",
+  "version": "0.0.3",
+  "tag": "v0.0.3",
+  "tags": ["latest", "v0.0.3"],
+  "image": "ghcr.io/bourse-numerique-d-afrique/client:latest",
+  "commit": "abc123def456...",
+  "actor": "github-username"
+}
+```
+
 Your Dokploy webhook handler can use this information to:
 - Identify which images to pull
 - Log deployment metadata
@@ -127,16 +192,26 @@ Your Dokploy webhook handler can use this information to:
 
 If webhooks are not available, you can configure Dokploy to automatically pull and redeploy:
 
-1. **In Dokploy project settings**:
+### Backend Services
+
+1. **Exchange API service in Dokploy**:
    - Enable "Auto-deploy on image update"
    - Set image to `ghcr.io/bourse-numerique-d-afrique/server:latest`
    - Set poll interval (e.g., every 5 minutes)
 
-2. **For clearing house service**:
+2. **Clearing House service**:
    - Enable auto-deploy
    - Set image to `ghcr.io/bourse-numerique-d-afrique/server-clearing-house:latest`
+   - Set poll interval (e.g., every 5 minutes)
 
-This method polls the registry instead of using webhooks.
+### Frontend Service
+
+3. **Frontend service in Dokploy**:
+   - Enable "Auto-deploy on image update"
+   - Set image to `ghcr.io/bourse-numerique-d-afrique/client:latest`
+   - Set poll interval (e.g., every 5 minutes)
+
+This method polls the registry instead of using webhooks. It's simpler but has a delay (up to the poll interval) before deployments happen.
 
 ## Troubleshooting
 
@@ -163,8 +238,10 @@ This method polls the registry instead of using webhooks.
 **Problem**: Secret not configured or wrong secret name
 
 **Solution**:
-1. Verify secret exists: GitHub → Settings → Secrets → Actions
-2. Name must be exactly: `DOKPLOY_STAGING_WEBHOOK_URL`
+1. Verify secret exists in the correct repository:
+   - Backend: Check `DOKPLOY_STAGING_WEBHOOK_URL` in server repository
+   - Frontend: Check `DOKPLOY_STAGING_WEBHOOK_URL_FRONTEND` in client repository
+2. Secret names must match exactly (case-sensitive)
 3. Check workflow logs for "not configured" message
 
 ### Images Not Updating

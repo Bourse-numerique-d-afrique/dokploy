@@ -6,11 +6,13 @@ Complete deployment setup for Bourse Numérique d'Afrique Exchange Platform.
 
 ```
 dokploy/
-├── README.md                    # This file
-├── QUICK-START.md              # 30-minute deployment guide
-├── DEPLOYMENT.md               # Comprehensive deployment documentation
-├── DNS-CONFIGURATION.md        # DNS setup guide
-└── WEBHOOK-CONFIGURATION.md    # Auto-deploy webhook setup
+├── README.md                       # This file
+├── QUICK-START.md                  # 30-minute deployment guide
+├── DEPLOYMENT.md                   # Comprehensive deployment documentation
+├── DNS-CONFIGURATION.md            # DNS setup guide
+├── WEBHOOK-CONFIGURATION.md        # Auto-deploy webhook setup
+├── LOCAL-DOKPLOY-OPTIONS.md        # Running Dokploy on local PC (with VPS nodes)
+└── CLOUDFLARE-TUNNEL-SETUP.md      # Expose local Dokploy for webhooks
 
 ../
 ├── docker-compose.production.yml    # Server 1: Exchange Core
@@ -79,8 +81,9 @@ test-payments.boursenumeriquedafrique.com
 
 ### Infrastructure
 - [ ] 3 VPS servers provisioned (or 1 for staging)
-- [ ] Dokploy installed on all servers
+- [ ] Dokploy installed on servers (or locally with tunnel - see LOCAL-DOKPLOY-OPTIONS.md)
 - [ ] Private network configured (optional but recommended)
+- [ ] If running Dokploy locally: Cloudflare Tunnel or webhook alternative configured
 
 ### Domain & DNS
 - [ ] Domain `boursenumeriquedafrique.com` registered
@@ -180,14 +183,16 @@ See `.env.*.example` files for complete reference.
 
 ## 📚 Documentation
 
-| Document                    | Purpose                                  |
-|-----------------------------|------------------------------------------|
-| `QUICK-START.md`            | Fast 30-minute deployment                |
-| `DEPLOYMENT.md`             | Complete step-by-step guide              |
-| `DNS-CONFIGURATION.md`      | DNS setup and troubleshooting            |
-| `WEBHOOK-CONFIGURATION.md`  | Auto-deploy webhook setup (staging)      |
-| `../README.md`              | Main project documentation               |
-| `../CLAUDE.md`              | Development guide for Claude Code        |
+| Document                       | Purpose                                  |
+|--------------------------------|------------------------------------------|
+| `QUICK-START.md`               | Fast 30-minute deployment                |
+| `DEPLOYMENT.md`                | Complete step-by-step guide              |
+| `DNS-CONFIGURATION.md`         | DNS setup and troubleshooting            |
+| `WEBHOOK-CONFIGURATION.md`     | Auto-deploy webhook setup (staging)      |
+| `LOCAL-DOKPLOY-OPTIONS.md`     | Run Dokploy locally with VPS nodes       |
+| `CLOUDFLARE-TUNNEL-SETUP.md`   | Expose local Dokploy for webhooks        |
+| `../README.md`                 | Main project documentation               |
+| `../CLAUDE.md`                 | Development guide for Claude Code        |
 
 ## 🆘 Troubleshooting
 
