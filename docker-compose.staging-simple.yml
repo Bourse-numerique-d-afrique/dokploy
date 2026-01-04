@@ -2,38 +2,38 @@ version: '3.8'
 
 services:
   exchange:
-    image: ghcr.io/bourse-numerique-d-afrique/server:${VERSION:-latest}
+    image: ghcr.io/bourse-numerique-d-afrique/server:latest
     restart: unless-stopped
     ports:
       - 5700
     environment:
       - POSTGRES_HOST=timescaledb
       - POSTGRES_PORT=5432
-      - POSTGRES_USER=${POSTGRES_USER}
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
-      - POSTGRES_DATABASE=${POSTGRES_DATABASE}
+      - POSTGRES_USER=exchange_user
+      - POSTGRES_PASSWORD=change_this_password_123
+      - POSTGRES_DATABASE=exchange_test
       - GQL_SERVER_PORT=5700
       - GQL_HOST=0.0.0.0
       - GQL_PORT=5700
-      - TOKEN_ISSUER=${TOKEN_ISSUER}
-      - JWT_SECRET=${JWT_SECRET}
+      - TOKEN_ISSUER=boursenumeriquedafrique-test
+      - JWT_SECRET=change_this_jwt_secret_must_be_at_least_32_characters_long
       - ETH_CLIENT_URL=http://ganache:8545
-      - ETH_PRIVATE_KEY=${ETH_PRIVATE_KEY}
-      - ETH_ADMIN_ADDRESS=${ETH_ADMIN_ADDRESS}
+      - ETH_PRIVATE_KEY=0x4f3edf983ac636a65a842ce7c78d9aa706d3b113bce9c46f30d7d21715b23b1d
+      - ETH_ADMIN_ADDRESS=0x90f8bf6a479f320ead074411a4b0e7944ea8c9c1
       - ETH_HA_STRATEGY=Priority
       - ETH_SIGNATURE_PARALLELISM=3
-      - MTN_URL=${MTN_URL}
-      - MTN_COLLECTION_PRIMARY_KEY=${MTN_COLLECTION_PRIMARY_KEY}
-      - MTN_COLLECTION_SECONDARY_KEY=${MTN_COLLECTION_SECONDARY_KEY}
-      - MTN_DISBURSEMENT_PRIMARY_KEY=${MTN_DISBURSEMENT_PRIMARY_KEY}
-      - MTN_DISBURSEMENT_SECONDARY_KEY=${MTN_DISBURSEMENT_SECONDARY_KEY}
-      - MTN_WEBHOOK_HOST=${MTN_WEBHOOK_HOST}
+      - MTN_URL=https://sandbox.momodeveloper.mtn.com
+      - MTN_COLLECTION_PRIMARY_KEY=test_key_replace
+      - MTN_COLLECTION_SECONDARY_KEY=test_key_replace
+      - MTN_DISBURSEMENT_PRIMARY_KEY=test_key_replace
+      - MTN_DISBURSEMENT_SECONDARY_KEY=test_key_replace
+      - MTN_WEBHOOK_HOST=test-payments.boursenumeriquedafrique.com
       - MTN_SERVER_CALLBACK_PORT=5705
-      - AIRTEL_CLIENT_ID=${AIRTEL_CLIENT_ID}
-      - AIRTEL_CLIENT_SECRET=${AIRTEL_CLIENT_SECRET}
-      - AIRTEL_ENVIRONMENT=${AIRTEL_ENVIRONMENT}
-      - AIRTEL_CALLBACK_URL=${AIRTEL_CALLBACK_URL}
-      - AIRTEL_DISBURSEMENT_PIN=${AIRTEL_DISBURSEMENT_PIN}
+      - AIRTEL_CLIENT_ID=test_id
+      - AIRTEL_CLIENT_SECRET=test_secret
+      - AIRTEL_ENVIRONMENT=staging
+      - AIRTEL_CALLBACK_URL=https://test-payments.boursenumeriquedafrique.com/airtel/callback
+      - AIRTEL_DISBURSEMENT_PIN=1234
       - AIRTEL_SERVER_CALLBACK_PORT=5706
       - PROMETHEUS_PORT=9090
       - PROMETHEUS_ENABLED=false
@@ -52,7 +52,7 @@ services:
       - traefik.http.services.exchange-staging.loadbalancer.server.port=5700
 
   clearing-house:
-    image: ghcr.io/bourse-numerique-d-afrique/server-clearing-house:${VERSION:-latest}
+    image: ghcr.io/bourse-numerique-d-afrique/server-clearing-house:latest
     restart: unless-stopped
     ports:
       - 8500
@@ -61,26 +61,26 @@ services:
     environment:
       - POSTGRES_HOST=timescaledb
       - POSTGRES_PORT=5432
-      - POSTGRES_USER=${POSTGRES_USER}
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
-      - POSTGRES_DATABASE=${POSTGRES_DATABASE}
+      - POSTGRES_USER=exchange_user
+      - POSTGRES_PASSWORD=change_this_password_123
+      - POSTGRES_DATABASE=exchange_test
       - GQL_SERVER_PORT=8500
       - GQL_HOST=0.0.0.0
       - GQL_PORT=8500
-      - TOKEN_ISSUER=${TOKEN_ISSUER}
-      - JWT_SECRET=${JWT_SECRET}
-      - MTN_URL=${MTN_URL}
-      - MTN_COLLECTION_PRIMARY_KEY=${MTN_COLLECTION_PRIMARY_KEY}
-      - MTN_COLLECTION_SECONDARY_KEY=${MTN_COLLECTION_SECONDARY_KEY}
-      - MTN_DISBURSEMENT_PRIMARY_KEY=${MTN_DISBURSEMENT_PRIMARY_KEY}
-      - MTN_DISBURSEMENT_SECONDARY_KEY=${MTN_DISBURSEMENT_SECONDARY_KEY}
-      - MTN_WEBHOOK_HOST=${MTN_WEBHOOK_HOST}
+      - TOKEN_ISSUER=boursenumeriquedafrique-test
+      - JWT_SECRET=change_this_jwt_secret_must_be_at_least_32_characters_long
+      - MTN_URL=https://sandbox.momodeveloper.mtn.com
+      - MTN_COLLECTION_PRIMARY_KEY=test_key_replace
+      - MTN_COLLECTION_SECONDARY_KEY=test_key_replace
+      - MTN_DISBURSEMENT_PRIMARY_KEY=test_key_replace
+      - MTN_DISBURSEMENT_SECONDARY_KEY=test_key_replace
+      - MTN_WEBHOOK_HOST=test-payments.boursenumeriquedafrique.com
       - MTN_SERVER_CALLBACK_PORT=5705
-      - AIRTEL_CLIENT_ID=${AIRTEL_CLIENT_ID}
-      - AIRTEL_CLIENT_SECRET=${AIRTEL_CLIENT_SECRET}
-      - AIRTEL_ENVIRONMENT=${AIRTEL_ENVIRONMENT}
-      - AIRTEL_CALLBACK_URL=${AIRTEL_CALLBACK_URL}
-      - AIRTEL_DISBURSEMENT_PIN=${AIRTEL_DISBURSEMENT_PIN}
+      - AIRTEL_CLIENT_ID=test_id
+      - AIRTEL_CLIENT_SECRET=test_secret
+      - AIRTEL_ENVIRONMENT=staging
+      - AIRTEL_CALLBACK_URL=https://test-payments.boursenumeriquedafrique.com/airtel/callback
+      - AIRTEL_DISBURSEMENT_PIN=1234
       - AIRTEL_SERVER_CALLBACK_PORT=5706
       - PROMETHEUS_ENABLED=false
     depends_on:
@@ -95,14 +95,14 @@ services:
       - traefik.http.services.clearing-staging.loadbalancer.server.port=8500
 
   frontend:
-    image: ghcr.io/bourse-numerique-d-afrique/client:${VERSION:-latest}
+    image: ghcr.io/bourse-numerique-d-afrique/client:latest
     restart: unless-stopped
     ports:
       - 80
     environment:
       - ENVIRONMENT=staging
-      - VITE_APP_SERVER_GRAPHQL_URL=${VITE_APP_SERVER_GRAPHQL_URL:-http://test-api.boursenumeriquedafrique.com/graphql}
-      - VITE_SERVER_GRAPHQL_WS_URL=${VITE_SERVER_GRAPHQL_WS_URL:-ws://test-api.boursenumeriquedafrique.com/graphql/ws}
+      - VITE_APP_SERVER_GRAPHQL_URL=http://test-api.boursenumeriquedafrique.com/graphql
+      - VITE_SERVER_GRAPHQL_WS_URL=ws://test-api.boursenumeriquedafrique.com/graphql/ws
     depends_on:
       - exchange
     networks:
@@ -118,9 +118,9 @@ services:
     image: timescale/timescaledb-ha:pg17
     restart: unless-stopped
     environment:
-      - POSTGRES_USER=${POSTGRES_USER}
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
-      - POSTGRES_DB=${POSTGRES_DATABASE}
+      - POSTGRES_USER=exchange_user
+      - POSTGRES_PASSWORD=change_this_password_123
+      - POSTGRES_DB=exchange_test
       - TIMESCALEDB_TELEMETRY=off
     ports:
       - 5432

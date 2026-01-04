@@ -5,8 +5,8 @@ services:
     image: ghcr.io/bourse-numerique-d-afrique/server:${VERSION:-latest}
     restart: unless-stopped
     ports:
-      - "5700:5700"
-      - "9090:9090"
+      - 5700
+      - 9090
     environment:
       - POSTGRES_HOST=timescaledb
       - POSTGRES_PORT=5432
@@ -44,7 +44,13 @@ services:
       - ethereum
       - redis
     networks:
-      - exchange-network
+      - dokploy-network
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.exchange-prod.rule=Host(`api.boursenumeriquedafrique.com`)
+      - traefik.http.routers.exchange-prod.entrypoints=websecure
+      - traefik.http.routers.exchange-prod.tls.certResolver=letsencrypt
+      - traefik.http.services.exchange-prod.loadbalancer.server.port=5700
 
   timescaledb:
     image: timescale/timescaledb-ha:pg17
@@ -55,11 +61,11 @@ services:
       - POSTGRES_DB=${POSTGRES_DATABASE}
       - TIMESCALEDB_TELEMETRY=off
     ports:
-      - "5432:5432"
+      - 5432
     volumes:
       - timescaledb-data:/var/lib/postgresql/data
     networks:
-      - exchange-network
+      - dokploy-network
     command:
       - postgres
       - -c
@@ -91,12 +97,12 @@ services:
     image: ${ETHEREUM_IMAGE:-ethereum/client-go:stable}
     restart: unless-stopped
     ports:
-      - "8545:8545"
-      - "8546:8546"
+      - 8545
+      - 8546
     volumes:
       - ethereum-data:/root/.ethereum
     networks:
-      - exchange-network
+      - dokploy-network
     command:
       - --http
       - --http.addr=0.0.0.0
@@ -115,23 +121,23 @@ services:
     image: redis:7-alpine
     restart: unless-stopped
     ports:
-      - "6379:6379"
+      - 6379
     volumes:
       - redis-data:/data
     networks:
-      - exchange-network
+      - dokploy-network
     command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
 
   prometheus:
     image: prom/prometheus:latest
     restart: unless-stopped
     ports:
-      - "9091:9090"
+      - 9091
     volumes:
       - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
       - prometheus-data:/prometheus
     networks:
-      - exchange-network
+      - dokploy-network
     command:
       - --config.file=/etc/prometheus/prometheus.yml
       - --storage.tsdb.path=/prometheus
@@ -143,8 +149,8 @@ services:
       - monitoring
 
 networks:
-  exchange-network:
-    driver: bridge
+  dokploy-network:
+    external: true
 
 volumes:
   timescaledb-data:

@@ -5,9 +5,9 @@ services:
     image: ghcr.io/bourse-numerique-d-afrique/server-clearing-house:${VERSION:-latest}
     restart: unless-stopped
     ports:
-      - "8500:8500"
-      - "5705:5705"
-      - "5706:5706"
+      - 8500
+      - 5705
+      - 5706
     environment:
       - POSTGRES_HOST=${POSTGRES_HOST}
       - POSTGRES_PORT=${POSTGRES_PORT:-5432}
@@ -35,8 +35,14 @@ services:
       - PROMETHEUS_PORT=9090
       - PROMETHEUS_ENABLED=${PROMETHEUS_ENABLED:-false}
     networks:
-      - clearing-house-network
+      - dokploy-network
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.clearing-prod.rule=Host(`payments.boursenumeriquedafrique.com`)
+      - traefik.http.routers.clearing-prod.entrypoints=websecure
+      - traefik.http.routers.clearing-prod.tls.certResolver=letsencrypt
+      - traefik.http.services.clearing-prod.loadbalancer.server.port=8500
 
 networks:
-  clearing-house-network:
-    driver: bridge
+  dokploy-network:
+    external: true

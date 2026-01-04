@@ -69,6 +69,43 @@ test-api.boursenumeriquedafrique.com
 test-payments.boursenumeriquedafrique.com
 ```
 
+## ⚠️ CRITICAL: Dokploy Requirements
+
+All compose files have been configured with Dokploy-specific requirements:
+
+### 1. External `dokploy-network`
+All services MUST use the external `dokploy-network` (not custom networks):
+```yaml
+networks:
+  dokploy-network:
+    external: true
+```
+
+### 2. Traefik Labels for Domain Routing
+Services that need public domain access MUST include Traefik labels:
+```yaml
+labels:
+  - traefik.enable=true
+  - traefik.http.routers.myapp.rule=Host(`domain.com`)
+  - traefik.http.routers.myapp.entrypoints=websecure
+  - traefik.http.routers.myapp.tls.certResolver=letsencrypt
+  - traefik.http.services.myapp.loadbalancer.server.port=5700
+```
+
+### 3. Port Format
+Ports should be specified without host binding:
+```yaml
+ports:
+  - 5700      # ✅ Correct
+  # NOT "5700:5700" ❌
+```
+
+### 4. No `container_name`
+Dokploy manages container names automatically. Do NOT specify `container_name` property.
+
+**All provided compose files follow these requirements.**
+See `DOKPLOY-TROUBLESHOOTING.md` for more details.
+
 ## 🚀 Quick Start
 
 ### For First-Time Deployment

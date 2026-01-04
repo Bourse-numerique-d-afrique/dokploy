@@ -6,14 +6,45 @@ Common issues and solutions when deploying with Dokploy.
 
 This error occurs when Dokploy cannot parse the docker-compose file correctly.
 
-### Solution 1: Use Simplified Compose Files
+### Solution 1: Use Dokploy-Compatible Compose Files
 
 All compose files have been updated to be Dokploy-compatible:
 - ✅ `docker-compose.staging.yml`
 - ✅ `docker-compose.production.yml`
 - ✅ `docker-compose.clearing-house.yml`
 
-Key changes:
+**CRITICAL REQUIREMENTS for Dokploy**:
+
+✅ **Use external `dokploy-network`** (NOT custom networks):
+```yaml
+networks:
+  dokploy-network:
+    external: true
+
+services:
+  myapp:
+    networks:
+      - dokploy-network  # Required!
+```
+
+✅ **Add Traefik labels** for domain routing (services that need public access):
+```yaml
+services:
+  myapp:
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.myapp.rule=Host(`domain.com`)
+      - traefik.http.routers.myapp.entrypoints=websecure
+      - traefik.http.routers.myapp.tls.certResolver=letsencrypt
+      - traefik.http.services.myapp.loadbalancer.server.port=3000
+```
+
+✅ **Port format** must be `5700` (NOT `"5700:5700"`):
+```yaml
+ports:
+  - 5700  # Correct
+  # NOT "5700:5700"
+```
 
 ✅ **Removed** `container_name` directives (Dokploy manages names)
 ✅ **Removed** health check conditions from `depends_on` (not supported in Dokploy)
@@ -21,7 +52,6 @@ Key changes:
 ✅ **Simplified** command syntax (array format)
 ✅ **Simplified** volume names (removed prefixes)
 ✅ **Removed** inline comments within service definitions
-✅ **Removed** custom network subnets (not needed)
 
 ### Solution 2: Verify Environment Variables
 
