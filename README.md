@@ -13,6 +13,7 @@ dokploy/
 ├── TAILSCALE-SETUP.md              # Private networking with Tailscale (REQUIRED)
 ├── NEW-SERVER-CHECKLIST.md         # Step-by-step checklist for adding servers
 ├── WEBHOOK-CONFIGURATION.md        # Auto-deploy webhook setup
+├── DOKPLOY-TROUBLESHOOTING.md      # Fix common Dokploy deployment issues
 ├── LOCAL-DOKPLOY-OPTIONS.md        # Running Dokploy on local PC (with VPS nodes)
 └── CLOUDFLARE-TUNNEL-SETUP.md      # Expose local Dokploy for webhooks
 
@@ -205,6 +206,7 @@ See `.env.*.example` files for complete reference.
 | `TAILSCALE-SETUP.md`           | **Private networking setup (REQUIRED)**  |
 | `NEW-SERVER-CHECKLIST.md`      | Add new servers to infrastructure        |
 | `WEBHOOK-CONFIGURATION.md`     | Auto-deploy webhook setup (staging)      |
+| `DOKPLOY-TROUBLESHOOTING.md`   | Fix Dokploy deployment issues            |
 | `LOCAL-DOKPLOY-OPTIONS.md`     | Run Dokploy locally with VPS nodes       |
 | `CLOUDFLARE-TUNNEL-SETUP.md`   | Expose local Dokploy for webhooks        |
 | `../README.md`                 | Main project documentation               |
