@@ -10,6 +10,7 @@ dokploy/
 ├── QUICK-START.md                  # 30-minute deployment guide
 ├── DEPLOYMENT.md                   # Comprehensive deployment documentation
 ├── DNS-CONFIGURATION.md            # DNS setup guide
+├── TAILSCALE-SETUP.md              # Private networking with Tailscale (REQUIRED)
 ├── WEBHOOK-CONFIGURATION.md        # Auto-deploy webhook setup
 ├── LOCAL-DOKPLOY-OPTIONS.md        # Running Dokploy on local PC (with VPS nodes)
 └── CLOUDFLARE-TUNNEL-SETUP.md      # Expose local Dokploy for webhooks
@@ -28,16 +29,24 @@ dokploy/
 ### Production (3-Server Setup)
 
 ```
-┌──────────────────┐       ┌──────────────────┐       ┌──────────────────┐
-│   Server 1       │       │   Server 2       │       │   Server 3       │
-│  Exchange Core   │◄──────┤  Clearing House  │       │   Frontend       │
-├──────────────────┤       ├──────────────────┤       ├──────────────────┤
-│ Exchange API     │       │ Payment Server   │       │ Next.js/React    │
-│ TimescaleDB      │       │ MTN Callback     │       │ Static Assets    │
-│ Ethereum         │       │ Airtel Callback  │       │                  │
-│ Redis            │       │                  │       │                  │
-└──────────────────┘       └──────────────────┘       └──────────────────┘
-api.bourse...com           payments.bourse...com      bourse...com
+┌────────────────────────────────────────────────────────────────┐
+│                   Tailscale Private Network                     │
+│                      (100.64.0.0/10)                           │
+│                                                                 │
+│  ┌──────────────────┐    ┌──────────────────┐    ┌──────────┐ │
+│  │   Server 1       │    │   Server 2       │    │ Server 3 │ │
+│  │  Exchange Core   │◄───┤  Clearing House  │    │ Frontend │ │
+│  ├──────────────────┤    ├──────────────────┤    ├──────────┤ │
+│  │ Exchange API     │    │ Payment Server   │    │ Next.js  │ │
+│  │ TimescaleDB      │    │ MTN Callback     │    │ React    │ │
+│  │ Ethereum         │    │ Airtel Callback  │    │          │ │
+│  │ Redis            │    │                  │    │          │ │
+│  └──────────────────┘    └──────────────────┘    └──────────┘ │
+│  100.100.100.10          100.100.100.20          Public only  │
+└────────────────────────────────────────────────────────────────┘
+   api.bourse...com         payments.bourse...com   bourse...com
+
+   🔒 Database accessible only via Tailscale (encrypted)
 ```
 
 ### Staging (Single Server)
@@ -82,7 +91,9 @@ test-payments.boursenumeriquedafrique.com
 ### Infrastructure
 - [ ] 3 VPS servers provisioned (or 1 for staging)
 - [ ] Dokploy installed on servers (or locally with tunnel - see LOCAL-DOKPLOY-OPTIONS.md)
-- [ ] Private network configured (optional but recommended)
+- [ ] **Tailscale installed on ALL servers** (REQUIRED - see TAILSCALE-SETUP.md)
+- [ ] Tailscale IPs documented for all servers
+- [ ] Docker Swarm initialized (if using swarm mode)
 - [ ] If running Dokploy locally: Cloudflare Tunnel or webhook alternative configured
 
 ### Domain & DNS
@@ -188,6 +199,7 @@ See `.env.*.example` files for complete reference.
 | `QUICK-START.md`               | Fast 30-minute deployment                |
 | `DEPLOYMENT.md`                | Complete step-by-step guide              |
 | `DNS-CONFIGURATION.md`         | DNS setup and troubleshooting            |
+| `TAILSCALE-SETUP.md`           | **Private networking setup (REQUIRED)**  |
 | `WEBHOOK-CONFIGURATION.md`     | Auto-deploy webhook setup (staging)      |
 | `LOCAL-DOKPLOY-OPTIONS.md`     | Run Dokploy locally with VPS nodes       |
 | `CLOUDFLARE-TUNNEL-SETUP.md`   | Expose local Dokploy for webhooks        |

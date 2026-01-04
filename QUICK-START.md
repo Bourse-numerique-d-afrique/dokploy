@@ -6,15 +6,51 @@ Get your exchange platform running in production in under 1 hour.
 
 - [ ] 3 VPS servers provisioned (or 1 for staging)
 - [ ] Dokploy installed on all servers
+- [ ] **Tailscale account created** (free at https://tailscale.com)
+- [ ] **Tailscale installed on ALL servers** (see TAILSCALE-SETUP.md)
 - [ ] Domain `boursenumeriquedafrique.com` purchased
 - [ ] GitHub Personal Access Token created
 - [ ] MTN MoMo API credentials obtained
 - [ ] Airtel Money API credentials obtained
 - [ ] Ethereum wallet/keys ready
 
-## 30-Minute Production Deployment
+**⚠️ IMPORTANT**: Tailscale setup is REQUIRED before continuing. It provides secure private networking between servers. See [TAILSCALE-SETUP.md](./TAILSCALE-SETUP.md) for setup instructions.
 
-### Step 1: DNS Setup (5 minutes)
+## 60-Minute Production Deployment
+
+### Step 1: Tailscale Setup (15 minutes)
+
+**On each server**, install and connect to Tailscale:
+
+```bash
+# SSH into server
+ssh root@<server-ip>
+
+# Install Tailscale
+curl -fsSL https://tailscale.com/install.sh | sh
+
+# Connect to your Tailscale network (replace with your auth key)
+sudo tailscale up --authkey=tskey-auth-xxxxx-yyyyy --hostname=exchange-api-prod
+
+# Get Tailscale IP (save this!)
+tailscale ip -4
+# Example output: 100.100.100.10
+```
+
+**Server naming convention**:
+- Server 1: `exchange-api-prod` (Tailscale IP: 100.100.100.10)
+- Server 2: `clearing-house-prod` (Tailscale IP: 100.100.100.20)
+- Staging: `exchange-staging` (Tailscale IP: 100.100.100.30)
+
+**Verify connectivity**:
+```bash
+# From Server 2, ping Server 1
+ping 100.100.100.10
+```
+
+For detailed instructions, see [TAILSCALE-SETUP.md](./TAILSCALE-SETUP.md).
+
+### Step 2: DNS Setup (5 minutes)
 
 ```bash
 # Add these A records in your DNS provider:
@@ -23,7 +59,7 @@ payments.boursenumeriquedafrique.com → <server-2-ip>
 boursenumeriquedafrique.com          → <server-3-ip> or Vercel
 ```
 
-### Step 2: Server 1 - Exchange Core (10 minutes)
+### Step 4: Server 1 - Exchange Core (10 minutes)
 
 1. **Install Dokploy** (if not already):
    ```bash
@@ -57,7 +93,7 @@ boursenumeriquedafrique.com          → <server-3-ip> or Vercel
 
 8. **Deploy** → Monitor logs
 
-### Step 3: Server 2 - Clearing House (10 minutes)
+### Step 4: Server 2 - Clearing House (10 minutes)
 
 1. **SSH & Install Dokploy**:
    ```bash
