@@ -1,113 +1,65 @@
-# =============================================================================
-# Production Docker Compose - Server 1: Exchange Core
-# Domain: api.boursenumeriquedafrique.com
-# =============================================================================
-# Services: Exchange API, TimescaleDB, Ethereum, Redis
-#
-# Deploy with Dokploy:
-# 1. Create new project in Dokploy: "exchange-core"
-# 2. Add this compose file
-# 3. Set environment variables from .env.production
-# 4. Deploy
-# =============================================================================
-
 version: '3.8'
 
 services:
-  # Exchange Server (Main API)
   exchange:
     image: ghcr.io/bourse-numerique-d-afrique/server:${VERSION:-latest}
-    container_name: exchange-api
     restart: unless-stopped
     ports:
-      - "5700:5700"  # GraphQL HTTP/WebSocket
-      - "9090:9090"  # Prometheus metrics (optional)
+      - "5700:5700"
+      - "9090:9090"
     environment:
-      # Database configuration
-      POSTGRES_HOST: timescaledb
-      POSTGRES_PORT: 5432
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_DATABASE: ${POSTGRES_DATABASE}
-
-      # Server configuration
-      GQL_SERVER_PORT: 5700
-      GQL_HOST: 0.0.0.0
-      GQL_PORT: 5700
-
-      # Authentication
-      TOKEN_ISSUER: ${TOKEN_ISSUER}
-      JWT_SECRET: ${JWT_SECRET}
-
-      # Ethereum configuration
-      ETH_CLIENT_URL: ${ETH_CLIENT_URL:-http://ethereum:8545}
-      ETH_PRIVATE_KEY: ${ETH_PRIVATE_KEY}
-      ETH_ADMIN_ADDRESS: ${ETH_ADMIN_ADDRESS}
-      ETH_HA_STRATEGY: ${ETH_HA_STRATEGY:-Priority}
-      ETH_SIGNATURE_PARALLELISM: ${ETH_SIGNATURE_PARALLELISM:-3}
-
-      # MTN MoMo configuration
-      MTN_URL: ${MTN_URL}
-      MTN_COLLECTION_PRIMARY_KEY: ${MTN_COLLECTION_PRIMARY_KEY}
-      MTN_COLLECTION_SECONDARY_KEY: ${MTN_COLLECTION_SECONDARY_KEY}
-      MTN_DISBURSEMENT_PRIMARY_KEY: ${MTN_DISBURSEMENT_PRIMARY_KEY}
-      MTN_DISBURSEMENT_SECONDARY_KEY: ${MTN_DISBURSEMENT_SECONDARY_KEY}
-      MTN_WEBHOOK_HOST: ${MTN_WEBHOOK_HOST}
-      MTN_SERVER_CALLBACK_PORT: 5705
-
-      # Airtel Money configuration
-      AIRTEL_CLIENT_ID: ${AIRTEL_CLIENT_ID}
-      AIRTEL_CLIENT_SECRET: ${AIRTEL_CLIENT_SECRET}
-      AIRTEL_ENVIRONMENT: ${AIRTEL_ENVIRONMENT}
-      AIRTEL_CALLBACK_URL: ${AIRTEL_CALLBACK_URL}
-      AIRTEL_DISBURSEMENT_PIN: ${AIRTEL_DISBURSEMENT_PIN}
-      AIRTEL_SERVER_CALLBACK_PORT: 5706
-
-      # Monitoring
-      PROMETHEUS_PORT: 9090
-      PROMETHEUS_ENABLED: ${PROMETHEUS_ENABLED:-true}
-
-      # Redis (for future use - session management, caching, rate limiting)
-      REDIS_URL: redis://redis:6379
-
+      - POSTGRES_HOST=timescaledb
+      - POSTGRES_PORT=5432
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DATABASE=${POSTGRES_DATABASE}
+      - GQL_SERVER_PORT=5700
+      - GQL_HOST=0.0.0.0
+      - GQL_PORT=5700
+      - TOKEN_ISSUER=${TOKEN_ISSUER}
+      - JWT_SECRET=${JWT_SECRET}
+      - ETH_CLIENT_URL=${ETH_CLIENT_URL:-http://ethereum:8545}
+      - ETH_PRIVATE_KEY=${ETH_PRIVATE_KEY}
+      - ETH_ADMIN_ADDRESS=${ETH_ADMIN_ADDRESS}
+      - ETH_HA_STRATEGY=${ETH_HA_STRATEGY:-Priority}
+      - ETH_SIGNATURE_PARALLELISM=${ETH_SIGNATURE_PARALLELISM:-3}
+      - MTN_URL=${MTN_URL}
+      - MTN_COLLECTION_PRIMARY_KEY=${MTN_COLLECTION_PRIMARY_KEY}
+      - MTN_COLLECTION_SECONDARY_KEY=${MTN_COLLECTION_SECONDARY_KEY}
+      - MTN_DISBURSEMENT_PRIMARY_KEY=${MTN_DISBURSEMENT_PRIMARY_KEY}
+      - MTN_DISBURSEMENT_SECONDARY_KEY=${MTN_DISBURSEMENT_SECONDARY_KEY}
+      - MTN_WEBHOOK_HOST=${MTN_WEBHOOK_HOST}
+      - MTN_SERVER_CALLBACK_PORT=5705
+      - AIRTEL_CLIENT_ID=${AIRTEL_CLIENT_ID}
+      - AIRTEL_CLIENT_SECRET=${AIRTEL_CLIENT_SECRET}
+      - AIRTEL_ENVIRONMENT=${AIRTEL_ENVIRONMENT}
+      - AIRTEL_CALLBACK_URL=${AIRTEL_CALLBACK_URL}
+      - AIRTEL_DISBURSEMENT_PIN=${AIRTEL_DISBURSEMENT_PIN}
+      - AIRTEL_SERVER_CALLBACK_PORT=5706
+      - PROMETHEUS_PORT=9090
+      - PROMETHEUS_ENABLED=${PROMETHEUS_ENABLED:-true}
+      - REDIS_URL=redis://redis:6379
     depends_on:
-      timescaledb:
-        condition: service_healthy
-      ethereum:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
+      - timescaledb
+      - ethereum
+      - redis
     networks:
       - exchange-network
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:5700/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
 
-  # TimescaleDB (PostgreSQL with TimescaleDB extension)
   timescaledb:
     image: timescale/timescaledb-ha:pg17
-    container_name: timescaledb
     restart: unless-stopped
     environment:
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_DB: ${POSTGRES_DATABASE}
-      TIMESCALEDB_TELEMETRY: off
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DATABASE}
+      - TIMESCALEDB_TELEMETRY=off
     ports:
       - "5432:5432"
     volumes:
-      - timescaledb_data:/var/lib/postgresql/data
+      - timescaledb-data:/var/lib/postgresql/data
     networks:
       - exchange-network
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
-      interval: 30s
-      timeout: 10s
-      retries: 5
-      start_period: 60s
     command:
       - postgres
       - -c
@@ -135,79 +87,67 @@ services:
       - -c
       - max_wal_size=4GB
 
-  # Ethereum Node (Geth for production, Ganache for development)
   ethereum:
     image: ${ETHEREUM_IMAGE:-ethereum/client-go:stable}
-    container_name: ethereum-node
     restart: unless-stopped
     ports:
-      - "8545:8545"  # HTTP RPC
-      - "8546:8546"  # WebSocket
+      - "8545:8545"
+      - "8546:8546"
     volumes:
-      - ethereum_data:/root/.ethereum
+      - ethereum-data:/root/.ethereum
     networks:
       - exchange-network
-    command: ${ETHEREUM_COMMAND:-"--http --http.addr 0.0.0.0 --http.port 8545 --http.api eth,net,web3,personal --http.corsdomain '*' --ws --ws.addr 0.0.0.0 --ws.port 8546 --ws.api eth,net,web3 --ws.origins '*' --syncmode snap --gcmode archive"}
-    healthcheck:
-      test: ["CMD", "geth", "attach", "--exec", "eth.blockNumber"]
-      interval: 30s
-      timeout: 10s
-      retries: 5
-      start_period: 120s
+    command:
+      - --http
+      - --http.addr=0.0.0.0
+      - --http.port=8545
+      - --http.api=eth,net,web3,personal
+      - --http.corsdomain=*
+      - --ws
+      - --ws.addr=0.0.0.0
+      - --ws.port=8546
+      - --ws.api=eth,net,web3
+      - --ws.origins=*
+      - --syncmode=snap
+      - --gcmode=archive
 
-  # Redis (Caching, Session Management, Rate Limiting)
   redis:
     image: redis:7-alpine
-    container_name: redis
     restart: unless-stopped
     ports:
       - "6379:6379"
     volumes:
-      - redis_data:/data
+      - redis-data:/data
     networks:
       - exchange-network
     command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
 
-  # Prometheus (Optional - Metrics collection)
   prometheus:
     image: prom/prometheus:latest
-    container_name: prometheus
     restart: unless-stopped
     ports:
       - "9091:9090"
     volumes:
       - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
-      - prometheus_data:/prometheus
+      - prometheus-data:/prometheus
     networks:
       - exchange-network
     command:
-      - '--config.file=/etc/prometheus/prometheus.yml'
-      - '--storage.tsdb.path=/prometheus'
-      - '--web.console.libraries=/etc/prometheus/console_libraries'
-      - '--web.console.templates=/etc/prometheus/consoles'
-      - '--storage.tsdb.retention.time=30d'
-      - '--web.enable-lifecycle'
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+      - --web.console.libraries=/etc/prometheus/console_libraries
+      - --web.console.templates=/etc/prometheus/consoles
+      - --storage.tsdb.retention.time=30d
+      - --web.enable-lifecycle
     profiles:
       - monitoring
 
 networks:
   exchange-network:
     driver: bridge
-    ipam:
-      config:
-        - subnet: 172.20.0.0/16
 
 volumes:
-  timescaledb_data:
-    driver: local
-  ethereum_data:
-    driver: local
-  redis_data:
-    driver: local
-  prometheus_data:
-    driver: local
+  timescaledb-data:
+  ethereum-data:
+  redis-data:
+  prometheus-data:

@@ -6,15 +6,22 @@ Common issues and solutions when deploying with Dokploy.
 
 This error occurs when Dokploy cannot parse the docker-compose file correctly.
 
-### Solution 1: Use Simplified Compose File
+### Solution 1: Use Simplified Compose Files
 
-The staging compose file has been updated to be Dokploy-compatible. Key changes:
+All compose files have been updated to be Dokploy-compatible:
+- ✅ `docker-compose.staging.yml`
+- ✅ `docker-compose.production.yml`
+- ✅ `docker-compose.clearing-house.yml`
+
+Key changes:
 
 ✅ **Removed** `container_name` directives (Dokploy manages names)
-✅ **Removed** health checks with conditions (Dokploy may not support these)
-✅ **Simplified** environment variable syntax (array format)
-✅ **Simplified** volume names
-✅ **Removed** comments within service definitions
+✅ **Removed** health check conditions from `depends_on` (not supported in Dokploy)
+✅ **Simplified** environment variable syntax (array format: `- KEY=value`)
+✅ **Simplified** command syntax (array format)
+✅ **Simplified** volume names (removed prefixes)
+✅ **Removed** inline comments within service definitions
+✅ **Removed** custom network subnets (not needed)
 
 ### Solution 2: Verify Environment Variables
 
