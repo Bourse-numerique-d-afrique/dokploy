@@ -7,10 +7,11 @@ Complete deployment setup for Bourse Numérique d'Afrique Exchange Platform.
 ```
 dokploy/
 ├── README.md                       # This file
-├── QUICK-START.md                  # 30-minute deployment guide
+├── QUICK-START.md                  # 60-minute deployment guide
 ├── DEPLOYMENT.md                   # Comprehensive deployment documentation
 ├── DNS-CONFIGURATION.md            # DNS setup guide
 ├── TAILSCALE-SETUP.md              # Private networking with Tailscale (REQUIRED)
+├── NEW-SERVER-CHECKLIST.md         # Step-by-step checklist for adding servers
 ├── WEBHOOK-CONFIGURATION.md        # Auto-deploy webhook setup
 ├── LOCAL-DOKPLOY-OPTIONS.md        # Running Dokploy on local PC (with VPS nodes)
 └── CLOUDFLARE-TUNNEL-SETUP.md      # Expose local Dokploy for webhooks
@@ -196,10 +197,11 @@ See `.env.*.example` files for complete reference.
 
 | Document                       | Purpose                                  |
 |--------------------------------|------------------------------------------|
-| `QUICK-START.md`               | Fast 30-minute deployment                |
+| `QUICK-START.md`               | Fast 60-minute deployment                |
 | `DEPLOYMENT.md`                | Complete step-by-step guide              |
 | `DNS-CONFIGURATION.md`         | DNS setup and troubleshooting            |
 | `TAILSCALE-SETUP.md`           | **Private networking setup (REQUIRED)**  |
+| `NEW-SERVER-CHECKLIST.md`      | Add new servers to infrastructure        |
 | `WEBHOOK-CONFIGURATION.md`     | Auto-deploy webhook setup (staging)      |
 | `LOCAL-DOKPLOY-OPTIONS.md`     | Run Dokploy locally with VPS nodes       |
 | `CLOUDFLARE-TUNNEL-SETUP.md`   | Expose local Dokploy for webhooks        |
