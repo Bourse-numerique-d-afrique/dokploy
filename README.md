@@ -53,15 +53,17 @@ dokploy/
 ### Staging (Single Server)
 
 ```
-┌────────────────────────────────────┐
-│        Staging Server              │
-├────────────────────────────────────┤
-│ Exchange API    :5700              │
-│ Clearing House  :8500              │
-│ TimescaleDB     :5432              │
-│ Ganache         :8545              │
-│ Redis           :6379              │
-└────────────────────────────────────┘
+┌─────────────────────────────────────────┐
+│          Staging Server                 │
+├─────────────────────────────────────────┤
+│ Frontend        :80, :443               │
+│ Exchange API    :5700                   │
+│ Clearing House  :8500                   │
+│ TimescaleDB     :5432                   │
+│ Ganache         :8545                   │
+│ Redis           :6379                   │
+└─────────────────────────────────────────┘
+test.boursenumeriquedafrique.com
 test-api.boursenumeriquedafrique.com
 test-payments.boursenumeriquedafrique.com
 ```
