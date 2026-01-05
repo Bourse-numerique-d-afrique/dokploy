@@ -3,6 +3,7 @@ version: '3.8'
 services:
   exchange:
     image: ghcr.io/bourse-numerique-d-afrique/server:${VERSION:-latest}
+    pull_policy: always
     restart: unless-stopped
     ports:
       - 5700
@@ -53,6 +54,7 @@ services:
 
   clearing-house:
     image: ghcr.io/bourse-numerique-d-afrique/server-clearing-house:${VERSION:-latest}
+    pull_policy: always
     restart: unless-stopped
     ports:
       - 8500
@@ -96,6 +98,7 @@ services:
 
   frontend:
     image: ghcr.io/bourse-numerique-d-afrique/client:${VERSION:-latest}
+    pull_policy: always
     restart: unless-stopped
     ports:
       - 80
