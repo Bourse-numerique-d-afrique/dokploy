@@ -39,12 +39,12 @@ services:
       - PROMETHEUS_PORT=9090
       - PROMETHEUS_ENABLED=${PROMETHEUS_ENABLED:-true}
       - REDIS_URL=redis://redis:6379
-      - ADMIN_EMAIL = "pondonda1@gmail.com"
-      - ADMIN_PASSWORD = ${ADMIN_PASSWORD}
-      - ADMIN_FIRST_NAME = ${ADMIN_FIRST_NAME:-"Pascal"}
-      - ADMIN_LAST_NAME = ${ADMIN_LAST_NAME:-"Ondo"}
-      - ADMIN_PHONE = ${ADMIN_PHONE:-"+24107457613"}
-      - ADMIN_PINCODE = ${ADMIN_PINCODE:-"1234"}
+      - ADMIN_EMAIL="pondonda1@gmail.com"
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD}
+      - ADMIN_FIRST_NAME=${ADMIN_FIRST_NAME:-"Pascal"}
+      - ADMIN_LAST_NAME=${ADMIN_LAST_NAME:-"Ondo"}
+      - ADMIN_PHONE=${ADMIN_PHONE:-"+24107457613"}
+      - ADMIN_PINCODE=${ADMIN_PINCODE:-"1234"}
     depends_on:
       - timescaledb
       - ethereum
