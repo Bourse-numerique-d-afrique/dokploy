@@ -108,7 +108,7 @@ services:
     pull_policy: always
     restart: unless-stopped
     ports:
-      - "80:80"
+      - "3002:3002"
     environment:
       - ENVIRONMENT=production
       - VITE_APP_SERVER_GRAPHQL_URL=${VITE_APP_SERVER_GRAPHQL_URL:-https://api.boursenumeriquedafrique.com/graphql}
@@ -126,7 +126,7 @@ services:
       - traefik.http.routers.frontend-prod.rule=Host(`boursenumeriquedafrique.com`)
       - traefik.http.routers.frontend-prod.entrypoints=websecure
       - traefik.http.routers.frontend-prod.tls.certResolver=letsencrypt
-      - traefik.http.services.frontend-prod.loadbalancer.server.port=80
+      - traefik.http.services.frontend-prod.loadbalancer.server.port=3002
 
   timescaledb:
     image: timescale/timescaledb-ha:pg17
