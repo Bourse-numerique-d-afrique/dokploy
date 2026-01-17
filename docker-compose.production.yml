@@ -15,6 +15,7 @@ services:
       - POSTGRES_DATABASE=${POSTGRES_DATABASE}
       - GQL_SERVER_PORT=5700
       - GQL_HOST=0.0.0.0
+      - HOST=0.0.0.0
       - GQL_PORT=5700
       - TOKEN_ISSUER=${TOKEN_ISSUER}
       - JWT_SECRET=${JWT_SECRET}
@@ -56,6 +57,7 @@ services:
       - traefik.docker.network=dokploy-network
       - traefik.http.routers.bna-exchange-secure.rule=Host(`api.boursenumeriquedafrique.com`)
       - traefik.http.routers.bna-exchange-secure.entrypoints=websecure
+      - traefik.http.routers.bna-exchange-secure.priority=100
       - traefik.http.routers.bna-exchange-secure.tls=true
       - traefik.http.routers.bna-exchange-secure.tls.certresolver=letsencrypt
       - traefik.http.routers.bna-exchange-secure.service=bna-exchange-svc
@@ -77,6 +79,11 @@ services:
       - POSTGRES_DATABASE=${POSTGRES_DATABASE}
       - GQL_SERVER_PORT=8500
       - GQL_HOST=0.0.0.0
+      - HOST=0.0.0.0
+      - ROCKET_ADDRESS=0.0.0.0
+      - SERVER_HOST=0.0.0.0
+      - ADDRESS=0.0.0.0
+      - BIND=0.0.0.0
       - GQL_PORT=8500
       - TOKEN_ISSUER=${TOKEN_ISSUER}
       - JWT_SECRET=${JWT_SECRET}
@@ -97,6 +104,10 @@ services:
       - PROMETHEUS_ENABLED=false
     depends_on:
       - timescaledb
+    volumes:
+      - ./start_clearing.sh:/usr/local/bin/start_clearing.sh
+    user: root
+    entrypoint: ["/bin/bash", "/usr/local/bin/start_clearing.sh"]
     networks:
       - dokploy-network
     labels:
@@ -104,10 +115,11 @@ services:
       - traefik.docker.network=dokploy-network
       - traefik.http.routers.bna-clearing-secure.rule=Host(`payments.boursenumeriquedafrique.com`)
       - traefik.http.routers.bna-clearing-secure.entrypoints=websecure
+      - traefik.http.routers.bna-clearing-secure.priority=100
       - traefik.http.routers.bna-clearing-secure.tls=true
       - traefik.http.routers.bna-clearing-secure.tls.certresolver=letsencrypt
       - traefik.http.routers.bna-clearing-secure.service=bna-clearing-svc
-      - traefik.http.services.bna-clearing-svc.loadbalancer.server.port=8500
+      - traefik.http.services.bna-clearing-svc.loadbalancer.server.port=8501
 
   frontend:
     image: ghcr.io/bourse-numerique-d-afrique/client:${VERSION:-latest}
@@ -163,28 +175,21 @@ services:
       - dokploy-network
 
   ethereum:
-    image: ${ETHEREUM_IMAGE:-ethereum/client-go:stable}
+    image: ethereum/client-go:v1.12.0
     restart: unless-stopped
     ports:
       - 8545
       - 8546
+    environment:
+      - ETH_PRIVATE_KEY=${ETH_PRIVATE_KEY}
+      - ETH_ADMIN_ADDRESS=${ETH_ADMIN_ADDRESS}
     volumes:
       - ethereum-data:/root/.ethereum
+      - ./genesis.json:/root/genesis.json
+      - ./start_geth.sh:/root/start_geth.sh
     networks:
       - dokploy-network
-    command:
-      - --http
-      - --http.addr=0.0.0.0
-      - --http.port=8545
-      - --http.api=eth,net,web3,personal
-      - --http.corsdomain=*
-      - --ws
-      - --ws.addr=0.0.0.0
-      - --ws.port=8546
-      - --ws.api=eth,net,web3
-      - --ws.origins=*
-      - --syncmode=snap
-      - --gcmode=archive
+    entrypoint: ["/bin/sh", "/root/start_geth.sh"]
 
   redis:
     image: redis:7-alpine
