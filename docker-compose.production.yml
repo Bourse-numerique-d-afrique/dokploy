@@ -125,12 +125,14 @@ services:
     image: ghcr.io/bourse-numerique-d-afrique/client:${VERSION:-latest}
     pull_policy: always
     restart: unless-stopped
+    build: 
+      context: https://github.com/bourse-numerique-d-afrique/client.git#main
+      dockerfile: Dockerfile
+      args:
+        - VITE_APP_SERVER_GRAPHQL_URL=${VITE_APP_SERVER_GRAPHQL_URL}
+        - VITE_SERVER_GRAPHQL_WS_URL=${VITE_SERVER_GRAPHQL_WS_URL}
     ports:
       - 80
-    environment:
-      - ENVIRONMENT=production
-      - VITE_APP_SERVER_GRAPHQL_URL=${VITE_APP_SERVER_GRAPHQL_URL:-https://api.boursenumeriquedafrique.com/graphql}
-      - VITE_SERVER_GRAPHQL_WS_URL=${VITE_SERVER_GRAPHQL_WS_URL:-wss://api.boursenumeriquedafrique.com/graphql/ws}
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:80/"]
       interval: 10s
