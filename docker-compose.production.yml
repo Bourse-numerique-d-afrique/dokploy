@@ -18,7 +18,7 @@ services:
       - GQL_PORT=5700
       - TOKEN_ISSUER=${TOKEN_ISSUER}
       - JWT_SECRET=${JWT_SECRET}
-      - ETH_CLIENT_URL=http://ganache:8545
+      - ETH_CLIENT_URL=http://ethereum:8545
       - ETH_PRIVATE_KEY=${ETH_PRIVATE_KEY}
       - ETH_ADMIN_ADDRESS=${ETH_ADMIN_ADDRESS}
       - ETH_HA_STRATEGY=Priority
@@ -47,89 +47,20 @@ services:
       - ADMIN_PINCODE=${ADMIN_PINCODE:-"1234"}
     depends_on:
       - timescaledb
-      - ganache
+      - ethereum
       - redis
     networks:
       - dokploy-network
     labels:
       - traefik.enable=true
-      - traefik.http.routers.exchange-staging.rule=Host(`api.boursenumeriquedafrique.com`)
-      - traefik.http.routers.exchange-staging.entrypoints=websecure
-      - traefik.http.routers.exchange-staging.tls.certResolver=letsencrypt
-      - traefik.http.services.exchange-staging.loadbalancer.server.port=5700
+      - traefik.http.routers.exchange-prod.rule=Host(`api.boursenumeriquedafrique.com`)
+      - traefik.http.routers.exchange-prod.entrypoints=websecure
+      - traefik.http.routers.exchange-prod.tls.certResolver=letsencrypt
+      - traefik.http.services.exchange-prod.loadbalancer.server.port=5700
 
   clearing-house:
     image: ghcr.io/bourse-numerique-d-afrique/server-clearing-house:${VERSION:-latest}
     pull_policy: always
-    restart: unless-stopped
-    ports:
-      - 8500
-      - 5705
-      - 5706
-    environment:
-      - POSTGRES_HOST=timescaledb
-      - POSTGRES_PORT=5432
-      - POSTGRES_USER=${POSTGRES_USER}
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
-      - POSTGRES_DATABASE=${POSTGRES_DATABASE}
-      - GQL_SERVER_PORT=8500
-      - GQL_HOST=0.0.0.0
-      - GQL_PORT=8500
-      - TOKEN_ISSUER=${TOKEN_ISSUER}
-      - JWT_SECRET=${JWT_SECRET}
-      - ETHEREUM_RPC_URL=http://ganache:8545
-      - MTN_URL=${MTN_URL}
-      - MTN_COLLECTION_PRIMARY_KEY=${MTN_COLLECTION_PRIMARY_KEY}
-      - MTN_COLLECTION_SECONDARY_KEY=${MTN_COLLECTION_SECONDARY_KEY}
-      - MTN_DISBURSEMENT_PRIMARY_KEY=${MTN_DISBURSEMENT_PRIMARY_KEY}
-      - MTN_DISBURSEMENT_SECONDARY_KEY=${MTN_DISBURSEMENT_SECONDARY_KEY}
-      - MTN_WEBHOOK_HOST=${MTN_WEBHOOK_HOST}
-      - MTN_SERVER_CALLBACK_PORT=5705
-      - AIRTEL_CLIENT_ID=${AIRTEL_CLIENT_ID}
-      - AIRTEL_CLIENT_SECRET=${AIRTEL_CLIENT_SECRET}
-      - AIRTEL_ENVIRONMENT=${AIRTEL_ENVIRONMENT}
-      - AIRTEL_CALLBACK_URL=${AIRTEL_CALLBACK_URL}
-      - AIRTEL_DISBURSEMENT_PIN=${AIRTEL_DISBURSEMENT_PIN}
-      - AIRTEL_SERVER_CALLBACK_PORT=5706
-      - PROMETHEUS_ENABLED=false
-    depends_on:
-      - timescaledb
-    networks:
-      - dokploy-network
-    labels:
-      - traefik.enable=true
-      - traefik.http.routers.clearing-staging.rule=Host(`payments.boursenumeriquedafrique.com`)
-      - traefik.http.routers.clearing-staging.entrypoints=websecure
-      - traefik.http.routers.clearing-staging.tls.certResolver=letsencrypt
-      - traefik.http.services.clearing-staging.loadbalancer.server.port=8500
-
-  frontend:
-    image: ghcr.io/bourse-numerique-d-afrique/client:${VERSION:-latest}
-    pull_policy: always
-    restart: unless-stopped
-    ports:
-      - "3002:3002"
-    environment:
-      - ENVIRONMENT=production
-      - VITE_APP_SERVER_GRAPHQL_URL=${VITE_APP_SERVER_GRAPHQL_URL:-https://api.boursenumeriquedafrique.com/graphql}
-      - VITE_SERVER_GRAPHQL_WS_URL=${VITE_SERVER_GRAPHQL_WS_URL:-wss://api.boursenumeriquedafrique.com/graphql/ws}
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:80/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 30s
-    networks:
-      - dokploy-network
-    labels:
-      - traefik.enable=true
-      - traefik.http.routers.frontend-prod.rule=Host(`boursenumeriquedafrique.com`)
-      - traefik.http.routers.frontend-prod.entrypoints=websecure
-      - traefik.http.routers.frontend-prod.tls.certResolver=letsencrypt
-      - traefik.http.services.frontend-prod.loadbalancer.server.port=3002
-
-  clearing-house:
-    image: ghcr.io/bourse-numerique-d-afrique/server-clearing-house:${VERSION:-latest}
     restart: unless-stopped
     ports:
       - 8500
@@ -157,10 +88,10 @@ services:
       - AIRTEL_CLIENT_ID=${AIRTEL_CLIENT_ID}
       - AIRTEL_CLIENT_SECRET=${AIRTEL_CLIENT_SECRET}
       - AIRTEL_ENVIRONMENT=${AIRTEL_ENVIRONMENT}
-      - AIRTEL_CALLBACK_URL=${AIRTEL_CALLBACK_URL:-https://payments.boursenumeriquedafrique.com/airtel/callback}
+      - AIRTEL_CALLBACK_URL=${AIRTEL_CALLBACK_URL}
       - AIRTEL_DISBURSEMENT_PIN=${AIRTEL_DISBURSEMENT_PIN}
       - AIRTEL_SERVER_CALLBACK_PORT=5706
-      - PROMETHEUS_ENABLED=${PROMETHEUS_ENABLED:-true}
+      - PROMETHEUS_ENABLED=false
     depends_on:
       - timescaledb
     networks:
@@ -174,6 +105,7 @@ services:
 
   frontend:
     image: ghcr.io/bourse-numerique-d-afrique/client:${VERSION:-latest}
+    pull_policy: always
     restart: unless-stopped
     ports:
       - 80
@@ -181,8 +113,12 @@ services:
       - ENVIRONMENT=production
       - VITE_APP_SERVER_GRAPHQL_URL=${VITE_APP_SERVER_GRAPHQL_URL:-https://api.boursenumeriquedafrique.com/graphql}
       - VITE_SERVER_GRAPHQL_WS_URL=${VITE_SERVER_GRAPHQL_WS_URL:-wss://api.boursenumeriquedafrique.com/graphql/ws}
-    depends_on:
-      - exchange
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:80/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
     networks:
       - dokploy-network
     labels:
@@ -207,22 +143,29 @@ services:
     networks:
       - dokploy-network
 
-  ganache:
-    image: trufflesuite/ganache:latest
+  ethereum:
+    image: ${ETHEREUM_IMAGE:-ethereum/client-go:stable}
     restart: unless-stopped
     ports:
       - 8545
-    command:
-      - --host=0.0.0.0
-      - --port=8545
-      - --accounts=10
-      - --deterministic
-      - --gasLimit=10000000
-      - --chain.chainId=1337
+      - 8546
     volumes:
-      - ganache-data:/app/db
+      - ethereum-data:/root/.ethereum
     networks:
       - dokploy-network
+    command:
+      - --http
+      - --http.addr=0.0.0.0
+      - --http.port=8545
+      - --http.api=eth,net,web3,personal
+      - --http.corsdomain=*
+      - --ws
+      - --ws.addr=0.0.0.0
+      - --ws.port=8546
+      - --ws.api=eth,net,web3
+      - --ws.origins=*
+      - --syncmode=snap
+      - --gcmode=archive
 
   redis:
     image: redis:7-alpine
@@ -241,5 +184,5 @@ networks:
 
 volumes:
   timescaledb-data:
-  ganache-data:
+  ethereum-data:
   redis-data:
