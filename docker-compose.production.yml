@@ -128,6 +128,70 @@ services:
       - traefik.http.routers.frontend-prod.tls.certResolver=letsencrypt
       - traefik.http.services.frontend-prod.loadbalancer.server.port=3002
 
+  clearing-house:
+    image: ghcr.io/bourse-numerique-d-afrique/server-clearing-house:${VERSION:-latest}
+    restart: unless-stopped
+    ports:
+      - 8500
+      - 5705
+      - 5706
+    environment:
+      - POSTGRES_HOST=timescaledb
+      - POSTGRES_PORT=5432
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DATABASE=${POSTGRES_DATABASE}
+      - GQL_SERVER_PORT=8500
+      - GQL_HOST=0.0.0.0
+      - GQL_PORT=8500
+      - TOKEN_ISSUER=${TOKEN_ISSUER}
+      - JWT_SECRET=${JWT_SECRET}
+      - ETHEREUM_RPC_URL=http://ethereum:8545
+      - MTN_URL=${MTN_URL}
+      - MTN_COLLECTION_PRIMARY_KEY=${MTN_COLLECTION_PRIMARY_KEY}
+      - MTN_COLLECTION_SECONDARY_KEY=${MTN_COLLECTION_SECONDARY_KEY}
+      - MTN_DISBURSEMENT_PRIMARY_KEY=${MTN_DISBURSEMENT_PRIMARY_KEY}
+      - MTN_DISBURSEMENT_SECONDARY_KEY=${MTN_DISBURSEMENT_SECONDARY_KEY}
+      - MTN_WEBHOOK_HOST=${MTN_WEBHOOK_HOST}
+      - MTN_SERVER_CALLBACK_PORT=5705
+      - AIRTEL_CLIENT_ID=${AIRTEL_CLIENT_ID}
+      - AIRTEL_CLIENT_SECRET=${AIRTEL_CLIENT_SECRET}
+      - AIRTEL_ENVIRONMENT=${AIRTEL_ENVIRONMENT}
+      - AIRTEL_CALLBACK_URL=${AIRTEL_CALLBACK_URL:-https://payments.boursenumeriquedafrique.com/airtel/callback}
+      - AIRTEL_DISBURSEMENT_PIN=${AIRTEL_DISBURSEMENT_PIN}
+      - AIRTEL_SERVER_CALLBACK_PORT=5706
+      - PROMETHEUS_ENABLED=${PROMETHEUS_ENABLED:-true}
+    depends_on:
+      - timescaledb
+    networks:
+      - dokploy-network
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.clearing-prod.rule=Host(`payments.boursenumeriquedafrique.com`)
+      - traefik.http.routers.clearing-prod.entrypoints=websecure
+      - traefik.http.routers.clearing-prod.tls.certResolver=letsencrypt
+      - traefik.http.services.clearing-prod.loadbalancer.server.port=8500
+
+  frontend:
+    image: ghcr.io/bourse-numerique-d-afrique/client:${VERSION:-latest}
+    restart: unless-stopped
+    ports:
+      - 80
+    environment:
+      - ENVIRONMENT=production
+      - VITE_APP_SERVER_GRAPHQL_URL=${VITE_APP_SERVER_GRAPHQL_URL:-https://api.boursenumeriquedafrique.com/graphql}
+      - VITE_SERVER_GRAPHQL_WS_URL=${VITE_SERVER_GRAPHQL_WS_URL:-wss://api.boursenumeriquedafrique.com/graphql/ws}
+    depends_on:
+      - exchange
+    networks:
+      - dokploy-network
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.frontend-prod.rule=Host(`boursenumeriquedafrique.com`)
+      - traefik.http.routers.frontend-prod.entrypoints=websecure
+      - traefik.http.routers.frontend-prod.tls.certResolver=letsencrypt
+      - traefik.http.services.frontend-prod.loadbalancer.server.port=80
+
   timescaledb:
     image: timescale/timescaledb-ha:pg17
     restart: unless-stopped
