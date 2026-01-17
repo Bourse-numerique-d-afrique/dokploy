@@ -125,12 +125,6 @@ services:
     image: ghcr.io/bourse-numerique-d-afrique/client:${VERSION:-latest}
     pull_policy: always
     restart: unless-stopped
-    build: 
-      context: https://github.com/bourse-numerique-d-afrique/client.git#main
-      dockerfile: Dockerfile
-      args:
-        - VITE_APP_SERVER_GRAPHQL_URL=${VITE_APP_SERVER_GRAPHQL_URL}
-        - VITE_SERVER_GRAPHQL_WS_URL=${VITE_SERVER_GRAPHQL_WS_URL}
     ports:
       - 80
     healthcheck:
@@ -139,6 +133,10 @@ services:
       timeout: 5s
       retries: 3
       start_period: 5s
+    volumes:
+      - ./frontend_entrypoint.sh:/usr/local/bin/entrypoint.sh
+    entrypoint: ["/usr/local/bin/entrypoint.sh"]
+    command: ["nginx", "-g", "daemon off;"]
     networks:
       - dokploy-network
     labels:
