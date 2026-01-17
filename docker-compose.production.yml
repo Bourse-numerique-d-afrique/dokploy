@@ -114,18 +114,29 @@ services:
       - VITE_APP_SERVER_GRAPHQL_URL=${VITE_APP_SERVER_GRAPHQL_URL:-https://api.boursenumeriquedafrique.com/graphql}
       - VITE_SERVER_GRAPHQL_WS_URL=${VITE_SERVER_GRAPHQL_WS_URL:-wss://api.boursenumeriquedafrique.com/graphql/ws}
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:80/health"]
-      interval: 30s
-      timeout: 10s
+      test: ["CMD", "wget", "-qO-", "http://localhost:80/"]
+      interval: 10s
+      timeout: 5s
       retries: 3
-      start_period: 30s
+      start_period: 5s
     networks:
       - dokploy-network
     labels:
       - traefik.enable=true
-      - traefik.http.routers.frontend-prod.rule=Host(`boursenumeriquedafrique.com`)
+      # HTTPS router for main domain
+      - traefik.http.routers.frontend-prod.rule=Host(`boursenumeriquedafrique.com`) || Host(`www.boursenumeriquedafrique.com`)
       - traefik.http.routers.frontend-prod.entrypoints=websecure
-      - traefik.http.routers.frontend-prod.tls.certResolver=letsencrypt
+      - traefik.http.routers.frontend-prod.tls=true
+      - traefik.http.routers.frontend-prod.tls.certresolver=letsencrypt
+      - traefik.http.routers.frontend-prod.service=frontend-prod
+      # HTTP router for redirect
+      - traefik.http.routers.frontend-prod-http.rule=Host(`boursenumeriquedafrique.com`) || Host(`www.boursenumeriquedafrique.com`)
+      - traefik.http.routers.frontend-prod-http.entrypoints=web
+      - traefik.http.routers.frontend-prod-http.middlewares=https-redirect
+      # HTTPS redirect middleware
+      - traefik.http.middlewares.https-redirect.redirectscheme.scheme=https
+      - traefik.http.middlewares.https-redirect.redirectscheme.permanent=true
+      # Service definition
       - traefik.http.services.frontend-prod.loadbalancer.server.port=80
 
   timescaledb:
