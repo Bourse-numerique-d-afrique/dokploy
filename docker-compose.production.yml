@@ -53,10 +53,13 @@ services:
       - dokploy-network
     labels:
       - traefik.enable=true
-      - traefik.http.routers.exchange-prod.rule=Host(`api.boursenumeriquedafrique.com`)
-      - traefik.http.routers.exchange-prod.entrypoints=websecure
-      - traefik.http.routers.exchange-prod.tls.certResolver=letsencrypt
-      - traefik.http.services.exchange-prod.loadbalancer.server.port=5700
+      - traefik.docker.network=dokploy-network
+      - traefik.http.routers.bna-exchange-secure.rule=Host(`api.boursenumeriquedafrique.com`)
+      - traefik.http.routers.bna-exchange-secure.entrypoints=websecure
+      - traefik.http.routers.bna-exchange-secure.tls=true
+      - traefik.http.routers.bna-exchange-secure.tls.certresolver=letsencrypt
+      - traefik.http.routers.bna-exchange-secure.service=bna-exchange-svc
+      - traefik.http.services.bna-exchange-svc.loadbalancer.server.port=5700
 
   clearing-house:
     image: ghcr.io/bourse-numerique-d-afrique/server-clearing-house:${VERSION:-latest}
@@ -98,10 +101,13 @@ services:
       - dokploy-network
     labels:
       - traefik.enable=true
-      - traefik.http.routers.clearing-prod.rule=Host(`payments.boursenumeriquedafrique.com`)
-      - traefik.http.routers.clearing-prod.entrypoints=websecure
-      - traefik.http.routers.clearing-prod.tls.certResolver=letsencrypt
-      - traefik.http.services.clearing-prod.loadbalancer.server.port=8500
+      - traefik.docker.network=dokploy-network
+      - traefik.http.routers.bna-clearing-secure.rule=Host(`payments.boursenumeriquedafrique.com`)
+      - traefik.http.routers.bna-clearing-secure.entrypoints=websecure
+      - traefik.http.routers.bna-clearing-secure.tls=true
+      - traefik.http.routers.bna-clearing-secure.tls.certresolver=letsencrypt
+      - traefik.http.routers.bna-clearing-secure.service=bna-clearing-svc
+      - traefik.http.services.bna-clearing-svc.loadbalancer.server.port=8500
 
   frontend:
     image: ghcr.io/bourse-numerique-d-afrique/client:${VERSION:-latest}
@@ -114,7 +120,7 @@ services:
       - VITE_APP_SERVER_GRAPHQL_URL=${VITE_APP_SERVER_GRAPHQL_URL:-https://api.boursenumeriquedafrique.com/graphql}
       - VITE_SERVER_GRAPHQL_WS_URL=${VITE_SERVER_GRAPHQL_WS_URL:-wss://api.boursenumeriquedafrique.com/graphql/ws}
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:80/"]
+      test: ["CMD", "curl", "-f", "http://localhost:80/"]
       interval: 10s
       timeout: 5s
       retries: 3
@@ -123,21 +129,22 @@ services:
       - dokploy-network
     labels:
       - traefik.enable=true
-      # HTTPS router for main domain
-      - traefik.http.routers.frontend-prod.rule=Host(`boursenumeriquedafrique.com`) || Host(`www.boursenumeriquedafrique.com`)
-      - traefik.http.routers.frontend-prod.entrypoints=websecure
-      - traefik.http.routers.frontend-prod.tls=true
-      - traefik.http.routers.frontend-prod.tls.certresolver=letsencrypt
-      - traefik.http.routers.frontend-prod.service=frontend-prod
+      - traefik.docker.network=dokploy-network
+      # HTTPS router for main domain - using specific names to avoid collision
+      - traefik.http.routers.bna-frontend-secure.rule=Host(`boursenumeriquedafrique.com`) || Host(`www.boursenumeriquedafrique.com`)
+      - traefik.http.routers.bna-frontend-secure.entrypoints=websecure
+      - traefik.http.routers.bna-frontend-secure.tls=true
+      - traefik.http.routers.bna-frontend-secure.tls.certresolver=letsencrypt
+      - traefik.http.routers.bna-frontend-secure.service=bna-frontend-svc
       # HTTP router for redirect
-      - traefik.http.routers.frontend-prod-http.rule=Host(`boursenumeriquedafrique.com`) || Host(`www.boursenumeriquedafrique.com`)
-      - traefik.http.routers.frontend-prod-http.entrypoints=web
-      - traefik.http.routers.frontend-prod-http.middlewares=https-redirect
+      - traefik.http.routers.bna-frontend-http.rule=Host(`boursenumeriquedafrique.com`) || Host(`www.boursenumeriquedafrique.com`)
+      - traefik.http.routers.bna-frontend-http.entrypoints=web
+      - traefik.http.routers.bna-frontend-http.middlewares=https-redirect
       # HTTPS redirect middleware
       - traefik.http.middlewares.https-redirect.redirectscheme.scheme=https
       - traefik.http.middlewares.https-redirect.redirectscheme.permanent=true
       # Service definition
-      - traefik.http.services.frontend-prod.loadbalancer.server.port=80
+      - traefik.http.services.bna-frontend-svc.loadbalancer.server.port=80
 
   timescaledb:
     image: timescale/timescaledb-ha:pg17
