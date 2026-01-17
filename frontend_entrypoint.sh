@@ -16,9 +16,10 @@ do
     # Replace the GraphQL HTTP URL if the environment variable is set
     # VITE_APP_SERVER_GRAPHQL_URL=https://api.boursenumeriquedafrique.com/graphql
     if [ -n "$VITE_APP_SERVER_GRAPHQL_URL" ]; then
-      # 1. Exact match with /graphql (Safest)
       sed -i "s|http://localhost:5700/graphql|$VITE_APP_SERVER_GRAPHQL_URL|g" "$file"
       sed -i "s|http://test-api.boursenumeriquedafrique.com/graphql|$VITE_APP_SERVER_GRAPHQL_URL|g" "$file"
+      # Specifically fix the 'gdh' string found in the image
+      sed -i "s|uri:\"gdh\"|uri:\"$VITE_APP_SERVER_GRAPHQL_URL\"|g" "$file"
     fi
     
     # Replace the GraphQL WebSocket URL
