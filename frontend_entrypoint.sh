@@ -1,37 +1,42 @@
 #!/bin/sh
+set -e
 
-ROOT_DIR=/usr/share/nginx/html
+echo "=== Frontend Entrypoint Script Started ==="
+echo "Environment variables:"
+echo "VITE_APP_SERVER_GRAPHQL_URL=${VITE_APP_SERVER_GRAPHQL_URL}"
+echo "VITE_SERVER_GRAPHQL_WS_URL=${VITE_SERVER_GRAPHQL_WS_URL}"
 
-echo "Replacing environment variables in JS files..."
+CONFIG_FILE=/usr/share/nginx/html/config.js
 
-for file in $ROOT_DIR/assets/*.js $ROOT_DIR/*.js;
-do
-  if [ -f "$file" ]; then
-    echo "Processing $file..."
-    
-    # Use a single replacement that catches all GraphQL URL patterns
-    if [ -n "$VITE_APP_SERVER_GRAPHQL_URL" ]; then
-      # Extract just the hostname+path from the URL for more flexible matching
-      GRAPHQL_HOST=$(echo "$VITE_APP_SERVER_GRAPHQL_URL" | sed 's|https://||')
-      
-      # Replace ANY GraphQL URL pattern with our target URL
-      sed -i -E "s|(http://|https://)?(localhost:5700|test-api\.boursenumeriquedafrique\.com)/graphql|$VITE_APP_SERVER_GRAPHQL_URL|g" "$file"
-      
-      # Also replace any standalone "gdh" strings
-      sed -i "s|\"gdh\"|\"$VITE_APP_SERVER_GRAPHQL_URL\"|g" "$file"
-      sed -i "s|'gdh'|'$VITE_APP_SERVER_GRAPHQL_URL'|g" "$file"
-      sed -i "s|gdh|$VITE_APP_SERVER_GRAPHQL_URL|g" "$file"
-    fi
-    
-    # Similar approach for WebSocket
-    if [ -n "$VITE_SERVER_GRAPHQL_WS_URL" ]; then
-      sed -i -E "s|(ws://|wss://)?(localhost:5700|test-api\.boursenumeriquedafrique\.com)/graphql/ws|$VITE_SERVER_GRAPHQL_WS_URL|g" "$file"
-    fi
-    
-    # Payments URL
-    sed -i "s|test-payments\.boursenumeriquedafrique\.com|payments.boursenumeriquedafrique.com|g" "$file"
+if [ -f "$CONFIG_FILE" ]; then
+  echo "✓ Found config.js at $CONFIG_FILE"
+  
+  echo "Before replacement:"
+  cat "$CONFIG_FILE"
+  
+  # Do the replacements
+  if [ -n "$VITE_APP_SERVER_GRAPHQL_URL" ]; then
+    sed -i "s|__GRAPHQL_URL__|${VITE_APP_SERVER_GRAPHQL_URL}|g" "$CONFIG_FILE"
+    echo "✓ Replaced GRAPHQL_URL"
+  else
+    echo "⚠️  VITE_APP_SERVER_GRAPHQL_URL is empty!"
   fi
-done
+  
+  if [ -n "$VITE_SERVER_GRAPHQL_WS_URL" ]; then
+    sed -i "s|__WS_URL__|${VITE_SERVER_GRAPHQL_WS_URL}|g" "$CONFIG_FILE"
+    echo "✓ Replaced WS_URL"
+  else
+    echo "⚠️  VITE_SERVER_GRAPHQL_WS_URL is empty!"
+  fi
+  
+  echo ""
+  echo "After replacement:"
+  cat "$CONFIG_FILE"
+else
+  echo "✗ config.js NOT found at $CONFIG_FILE"
+  echo "Listing directory:"
+  ls -la /usr/share/nginx/html/ | head -20
+fi
 
-echo "Environment variables replaced. Starting Nginx..."
+echo "=== Starting Nginx ==="
 exec "$@"
